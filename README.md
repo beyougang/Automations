@@ -1,2 +1,114 @@
-# Automations
-This is a backup of ...
+# Gmail 自动清理工具（Automations）
+
+这是一个可本地运行的 Gmail 自动清理脚本，核心能力包括：
+
+- **AI 判断邮件价值**：结合主题、发件人、摘要、时间等信息打分。
+- **自动清理规则**：按邮件年龄、大小、类型（订阅/促销）和 AI 分数执行删除。
+- **订阅邮件识别**：优先根据 `List-Unsubscribe`，同时结合发件人与主题关键字。
+- **一键释放空间**：运行一次即可批量清理低价值邮件。
+- **每月自动清理**：自动生成 cron 表达式，便于定时执行。
+
+---
+
+## 1. 安装依赖
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+## 2. Gmail API 准备
+
+1. 在 Google Cloud 控制台启用 Gmail API。
+2. 创建 OAuth 客户端（Desktop App）。
+3. 下载 `credentials.json` 到项目根目录。
+
+首次运行时会弹浏览器授权，授权后生成 `token.json`。
+
+---
+
+## 3. 初始化配置
+
+```bash
+python3 gmail_cleanup_tool.py init --config config.json
+```
+
+会生成默认配置：
+
+```json
+{
+  "days_old": 30,
+  "max_messages": 200,
+  "min_size_kb": 40,
+  "dry_run": true,
+  "monthly_day": 1,
+  "monthly_hour": 3,
+  "ai_provider": "openai",
+  "ai_model": "gpt-4o-mini",
+  "low_value_threshold": 0.45
+}
+```
+
+> 建议先保持 `dry_run: true`，观察日志后再改成 `false`。
+
+---
+
+## 4. 运行清理（一键释放空间）
+
+```bash
+OPENAI_API_KEY=你的key python3 gmail_cleanup_tool.py run --config config.json
+```
+
+如果 `OPENAI_API_KEY` 未设置，工具会自动降级为保守策略（默认尽量保留）。
+
+---
+
+## 5. 每月自动清理
+
+生成 cron 配置：
+
+```bash
+python3 gmail_cleanup_tool.py cron --config config.json
+```
+
+然后把输出的行复制到：
+
+```bash
+crontab -e
+```
+
+即可实现每月自动清理。
+
+---
+
+## 6. 功能实现说明
+
+### AI 判断邮件价值
+- 使用 OpenAI 对每封候选邮件输出：`score`（0-1）+ `decision`（KEEP/DELETE/UNSUBSCRIBE/ARCHIVE）+ `reason`。
+- 低分、广告/通知/过期信息会优先进入清理候选。
+
+### 自动清理规则
+- 邮件超过 `days_old`。
+- 邮件体积大于 `min_size_kb`。
+- 满足订阅邮件条件，或 AI 评分低于 `low_value_threshold`，或 AI 直接建议 DELETE。
+
+### 订阅邮件识别
+- 读取邮件头 `List-Unsubscribe`。
+- 结合发件人与主题关键字（newsletter/digest/promo/noreply/订阅/促销等）。
+
+### 一键释放空间
+- `run` 命令会自动扫描、打分、删除并统计预计释放空间。
+
+### 每月自动清理
+- `cron` 命令按配置中的 `monthly_day` / `monthly_hour` 生成可直接使用的 cron 行。
+
+---
+
+## 注意事项
+
+- 删除动作会进入 Gmail 垃圾箱，不是立即永久删除。
+- 生产环境建议开启日志并先 dry-run 至少 1-2 周。
+- 本工具默认处理 `in:inbox` 且非 `category:primary` 的旧邮件，可按需扩展 query。
