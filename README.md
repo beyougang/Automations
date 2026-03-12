@@ -12,6 +12,14 @@
 
 ## 1. 安装依赖
 
+推荐使用项目内脚本（自动回退镜像）：
+
+```bash
+bash scripts/install_deps.sh
+```
+
+或手动安装：
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -107,8 +115,72 @@ crontab -e
 
 ---
 
+## 7. `pip install -r requirements.txt` 失败怎么修复
+
+你之前遇到的是典型网络/代理问题（例如 `Cannot connect to proxy`, `403 Forbidden`）。
+
+### 方案 A（推荐）：使用内置安装脚本
+
+```bash
+bash scripts/install_deps.sh
+```
+
+脚本会：
+1. 先尝试默认 PyPI。
+2. 失败后自动回退到清华 / 阿里云镜像。
+3. 若仍失败，输出代理与 pip.conf 的修复建议。
+
+### 方案 B：显式指定镜像
+
+```bash
+python3 -m pip install -r requirements.txt \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple \
+  --trusted-host pypi.tuna.tsinghua.edu.cn
+```
+
+### 方案 C：配置代理后再安装
+
+```bash
+export HTTPS_PROXY=http://<proxy_host>:<proxy_port>
+export HTTP_PROXY=http://<proxy_host>:<proxy_port>
+python3 -m pip install -r requirements.txt
+```
+
+### 方案 D：持久化 pip 镜像配置
+
+```bash
+mkdir -p ~/.pip
+cat > ~/.pip/pip.conf <<'CONF'
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+trusted-host = pypi.tuna.tsinghua.edu.cn
+timeout = 120
+CONF
+```
+
+---
+
 ## 注意事项
 
 - 删除动作会进入 Gmail 垃圾箱，不是立即永久删除。
 - 生产环境建议开启日志并先 dry-run 至少 1-2 周。
 - 本工具默认处理 `in:inbox` 且非 `category:primary` 的旧邮件，可按需扩展 query。
+
+
+## 8. Web 版本（你现在可以直接用网页）
+
+启动方式：
+
+```bash
+python3 web_app.py
+```
+
+浏览器打开：`http://127.0.0.1:5000`
+
+Web 版提供：
+- 参数可视化配置
+- 一键执行清理
+- 每月自动清理 cron 生成
+- 清理结果与日志展示
+
+> 说明：Web 版复用了同一套 Gmail 清理逻辑，首次执行仍会触发 Gmail OAuth 授权。
