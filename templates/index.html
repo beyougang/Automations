@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gmail 自动清理 Web 工具</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Gmail 自动清理（Web 版）</h1>
+      <p class="subtitle">AI判断邮件价值 · 自动清理规则 · 订阅邮件识别 · 一键释放空间 · 每月自动清理</p>
+
+      <section class="status">
+        <strong>OpenAI Key 状态：</strong>
+        {% if env_openai %}
+        <span class="ok">已检测到 OPENAI_API_KEY</span>
+        {% else %}
+        <span class="warn">未检测到 OPENAI_API_KEY（将保守保留）</span>
+        {% endif %}
+      </section>
+
+      <form method="post" class="grid-form">
+        <label>days_old <input name="days_old" type="number" value="{{ config.days_old }}" /></label>
+        <label>max_messages <input name="max_messages" type="number" value="{{ config.max_messages }}" /></label>
+        <label>min_size_kb <input name="min_size_kb" type="number" value="{{ config.min_size_kb }}" /></label>
+        <label>low_value_threshold <input name="low_value_threshold" type="number" step="0.01" value="{{ config.low_value_threshold }}" /></label>
+
+        <label>monthly_day <input name="monthly_day" type="number" value="{{ config.monthly_day }}" /></label>
+        <label>monthly_hour <input name="monthly_hour" type="number" value="{{ config.monthly_hour }}" /></label>
+        <label>ai_provider <input name="ai_provider" value="{{ config.ai_provider }}" /></label>
+        <label>ai_model <input name="ai_model" value="{{ config.ai_model }}" /></label>
+
+        <label>credentials <input name="credentials" value="credentials.json" /></label>
+        <label>token <input name="token" value="token.json" /></label>
+        <label>config_path <input name="config_path" value="config.json" /></label>
+        <label>script_path <input name="script_path" value="gmail_cleanup_tool.py" /></label>
+
+        <label>dry_run
+          <select name="dry_run">
+            <option value="true" {% if config.dry_run %}selected{% endif %}>true（推荐先试运行）</option>
+            <option value="false" {% if not config.dry_run %}selected{% endif %}>false（真实删除）</option>
+          </select>
+        </label>
+
+        <div class="actions">
+          <button formaction="/run">一键执行清理</button>
+          <button formaction="/cron" type="submit">生成每月自动清理 Cron</button>
+        </div>
+      </form>
+
+      {% if result %}
+      <section class="card">
+        <h2>清理结果</h2>
+        <ul>
+          <li>扫描邮件：{{ result.scanned }}</li>
+          <li>删除邮件：{{ result.deleted }}</li>
+          <li>预计释放空间：{{ result.freed_mb }} MB</li>
+          <li>dry_run：{{ result.dry_run }}</li>
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if cron_line %}
+      <section class="card">
+        <h2>每月自动清理 Cron</h2>
+        <pre>{{ cron_line }}</pre>
+      </section>
+      {% endif %}
+
+      {% if error %}
+      <section class="card error">
+        <h2>错误信息</h2>
+        <pre>{{ error }}</pre>
+      </section>
+      {% endif %}
+
+      {% if output %}
+      <section class="card">
+        <h2>运行日志</h2>
+        <pre>{{ output }}</pre>
+      </section>
+      {% endif %}
+    </main>
+  </body>
+</html>
