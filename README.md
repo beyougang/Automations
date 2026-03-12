@@ -184,3 +184,46 @@ Web 版提供：
 - 清理结果与日志展示
 
 > 说明：Web 版复用了同一套 Gmail 清理逻辑，首次执行仍会触发 Gmail OAuth 授权。
+
+
+## 9. 自动部署到你的网站（支持）
+
+可以，我已经把“自动部署”需要的文件加好了，你只要填服务器信息即可。
+
+### 方式 A：一条命令手动部署到你的服务器
+
+先确保服务器已安装：`git`、`docker`、`docker compose`。
+
+```bash
+bash scripts/deploy_remote.sh <server_user> <server_host> <server_path> <branch>
+```
+
+示例：
+
+```bash
+bash scripts/deploy_remote.sh root 1.2.3.4 /opt/gmail-cleaner main
+```
+
+部署脚本会自动：
+1. 首次 `git clone` / 后续 `git pull`
+2. 执行 `docker compose up -d --build`
+3. 启动 Web 服务（默认映射 `5000:5000`）
+
+### 方式 B：GitHub Actions 自动部署（每次 push main）
+
+仓库已包含：`.github/workflows/deploy.yml`。
+
+你只需要在 GitHub 仓库 Secrets 配置：
+- `DEPLOY_HOST`：服务器地址
+- `DEPLOY_USER`：SSH 用户
+- `DEPLOY_SSH_KEY`：私钥内容
+- `DEPLOY_PATH`：服务器部署路径（如 `/opt/gmail-cleaner`）
+- `OPENAI_API_KEY`：OpenAI Key（可选但建议）
+
+然后 push 到 `main`，会自动 SSH 到服务器部署。
+
+### 生产建议（可选）
+- 对外建议通过 Nginx/Caddy 反向代理 + HTTPS。
+- 建议在服务器 `.env` 管理 `OPENAI_API_KEY`，不要把 key 写死在仓库。
+
+> 说明：我无法直接访问你的服务器或网站账号，所以不能在当前会话里“替你登录并实际发布”；但现在仓库已具备自动部署能力，你填好参数即可一键部署。
