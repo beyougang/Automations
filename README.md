@@ -12,14 +12,6 @@
 
 ## 1. 安装依赖
 
-推荐使用项目内脚本（自动回退镜像）：
-
-```bash
-bash scripts/install_deps.sh
-```
-
-或手动安装：
-
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -112,51 +104,6 @@ crontab -e
 
 ### 每月自动清理
 - `cron` 命令按配置中的 `monthly_day` / `monthly_hour` 生成可直接使用的 cron 行。
-
----
-
-## 7. `pip install -r requirements.txt` 失败怎么修复
-
-你之前遇到的是典型网络/代理问题（例如 `Cannot connect to proxy`, `403 Forbidden`）。
-
-### 方案 A（推荐）：使用内置安装脚本
-
-```bash
-bash scripts/install_deps.sh
-```
-
-脚本会：
-1. 先尝试默认 PyPI。
-2. 失败后自动回退到清华 / 阿里云镜像。
-3. 若仍失败，输出代理与 pip.conf 的修复建议。
-
-### 方案 B：显式指定镜像
-
-```bash
-python3 -m pip install -r requirements.txt \
-  -i https://pypi.tuna.tsinghua.edu.cn/simple \
-  --trusted-host pypi.tuna.tsinghua.edu.cn
-```
-
-### 方案 C：配置代理后再安装
-
-```bash
-export HTTPS_PROXY=http://<proxy_host>:<proxy_port>
-export HTTP_PROXY=http://<proxy_host>:<proxy_port>
-python3 -m pip install -r requirements.txt
-```
-
-### 方案 D：持久化 pip 镜像配置
-
-```bash
-mkdir -p ~/.pip
-cat > ~/.pip/pip.conf <<'CONF'
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-trusted-host = pypi.tuna.tsinghua.edu.cn
-timeout = 120
-CONF
-```
 
 ---
 
